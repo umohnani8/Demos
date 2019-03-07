@@ -72,10 +72,10 @@ cleanup() {
 trap cleanup EXIT
 # Initial setup
 setup() {
-    if ! rpm -q podman buildah audit >/dev/null; then
-	echo "$0" requires the podman, buildah and audit packages be installed
-	exit 1
-    fi
+    # if ! rpm -q podman buildah audit >/dev/null; then
+	# echo "$0" requires the podman, buildah and audit packages be installed
+	# exit 1
+    # fi
     if ! command -v docker > /dev/null; then
 	echo "$0" requires the docker package be installed
 	exit 1
@@ -103,12 +103,12 @@ setup() {
 buildah_image() {
     if ! sudo podman images  | grep -q -w buildah-ctr; then
 	BUILDAH_CTR_RMI=true
-	sudo podman pull quay.io/sallyom/buildah-ctr
+	sudo podman pull umohnani/buildah-ctr
     fi
 }
 
 intro() {
-    read_yellow "DevConf Demos!  Buildah, Podman, Skopeo, CRI-O Security"
+    read_yellow "OpenShift Commons Demos!  Buildah, Podman, Skopeo Security"
     echo ""
     clear
 }
@@ -194,7 +194,7 @@ _EOF
     sudo podman run --rm --net=host -v /var/lib/mycontainer:/var/lib/containers:Z buildah-ctr --storage-driver vfs images
     echo ""
 
-    read_bright "--> sudo podman run --rm -v /var/lib/mycontainer:/var/lib/containers:Z buildah-ctr --storage-driver vfs rmi --force --all"
+    read_bright "--> cleanup"
     sudo podman run --rm --net=host -v /var/lib/mycontainer:/var/lib/containers:Z buildah-ctr --storage-driver vfs rmi -f --all
     echo ""
 
@@ -351,39 +351,6 @@ podman_fork_exec() {
     clear
 }
 
-podman_top() {
-    # Podman top commands
-    read_yellow "Podman top features"
-    echo ""
-
-    read_bright "--> sudo podman run -d --name top_test fedora:latest sleep 1000"
-    sudo podman run -d --name top_test fedora:latest sleep 1000
-    echo ""
-
-    read_bright "--> sudo podman top --latest pid hpid"
-    sudo podman top --latest pid hpid
-    echo ""
-
-    read_bright "--> sudo podman top --latest label"
-    sudo podman top --latest label
-    echo ""
-    read_bright "--> sudo podman top --latest seccomp"
-    sudo podman top --latest seccomp
-    echo ""
-
-    read_bright "--> sudo podman top --latest capeff"
-    sudo podman top --latest capeff
-    echo ""
-
-    read_bright "--> cleanup"
-    sudo podman stop -t 0 top_test 2> /dev/null
-    sudo podman rm -f top_test 2> /dev/null
-    echo ""
-
-    read_bright "--> clear"
-    clear
-}
-
 skopeo_inspect() {
     # Skopeo inspect a remote image
     read_yellow "Inspect a remote image using skopeo"
@@ -425,91 +392,6 @@ skopeo_cp_from_docker_to_podman() {
     clear
 }
 
-crio_read_only() {
-    # CRI-O read-only mode
-    read_yellow "CRI-O read-only mode"
-    echo ""
-
-    read_bright "--> sudo grep read_only /etc/crio/crio.conf"
-    sudo grep read_only /etc/crio/crio.conf
-    echo ""
-
-    read_bright "--> sudo systemctl restart crio"
-    sudo systemctl restart crio
-    echo ""
-
-    read_bright "--> POD=\$(sudo crictl runp sandbox_config.json)"
-    POD=$(sudo crictl runp sandbox_config.json)
-    echo "$POD"
-    echo ""
-
-    read_bright "--> CTR=\$(sudo crictl create \$POD container_demo.json sandbox_config.json)"
-    CTR=$(sudo crictl create "$POD" container_demo.json sandbox_config.json)
-    echo "$CTR"
-    echo ""
-
-    read_bright "--> sudo crictl start \$CTR"
-    sudo crictl start "$CTR"
-    echo ""
-
-    read_bright "--> sudo crictl exec --sync \$CTR dnf install buildah"
-    sudo crictl exec --sync "$CTR" dnf install buildah
-    echo ""
-
-    read_bright "--> cleanup"
-    sudo crictl stopp "$POD" 2> /dev/null
-    sudo crictl rmp "$POD" 2> /dev/null
-    echo ""
-
-    read_bright "--> clear"
-    clear
-}
-
-crio_modify_caps() {
-    # Modifying capabilities in CRI-O
-    read_yellow "Modifying capabilities in CRI-O"
-    echo ""
-
-    read_bright "--> sudo vim /etc/crio/crio.conf"
-    sudo vim /etc/crio/crio.conf
-    #sudo emacs -nw /etc/crio/crio.conf
-    echo ""
-
-    read_bright "--> sudo systemctl restart crio"
-    sudo systemctl restart crio
-    echo ""
-
-    read_bright "--> POD=\$(sudo crictl runp sandbox_config.json)"
-    POD=$(sudo crictl runp sandbox_config.json)
-    echo "$POD"
-    echo ""
-
-    read_bright "--> CTR=\$(sudo crictl create \$POD container_demo.json sandbox_config.json)"
-    CTR=$(sudo crictl create "$POD" container_demo.json sandbox_config.json)
-    echo "$CTR"
-    echo ""
-
-    read_bright "--> sudo crictl start \$CTR"
-    sudo crictl start "$CTR"
-    echo ""
-
-    read_bright "--> sudo crictl exec -i -t \$CTR capsh --print"
-    sudo crictl exec -i -t "$CTR" capsh --print
-    echo ""
-
-    read_bright "--> sudo cat /run/containers/storage/overlay-containers/\$POD/userdata/config.json | grep -A 50 'ociVersion'"
-    sudo cat /run/containers/storage/overlay-containers/"$POD"/userdata/config.json | grep -A 50 'ociVersion'
-    echo ""
-
-    read_bright "--> cleanup"
-    sudo crictl stopp "$POD"
-    sudo crictl rmp "$POD"
-    echo ""
-
-    read_bright "--> clear"
-    clear
-}
-
 setup
 buildah_image
 intro
@@ -518,11 +400,8 @@ buildah_in_container
 podman_rootless
 podman_userns
 podman_fork_exec
-podman_top
 skopeo_inspect
 skopeo_cp_from_docker_to_podman
-crio_read_only
-crio_modify_caps
 
 read_yellow "End of Demo"
 echo_bright "Thank you!"
