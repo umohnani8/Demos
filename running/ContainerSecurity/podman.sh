@@ -1,11 +1,15 @@
 #!/bin/sh
 
 bold=$(tput bold)
-cyan=$(tput setaf 6)
+blue=$(tput setaf 33)
+yellow=$(tput setaf 136)
 reset=$(tput sgr0)
 
 # podmah.sh demo script.
-# This script will demonstrate a new security features of podman
+
+read -p "${bold}${yellow}This script will demonstrate new security features of podman${reset}"
+echo ""
+clear
 
 setup() {
     # rpm -q podman audit oci-seccomp-bpf-hook perl-JSON-PP >/dev/null
@@ -40,107 +44,107 @@ EOF
 
 ping() {
     read -p "
-Dropping capabilities prevents ${bold}ping${reset} command from working.
+${blue}${bold}Dropping capabilities prevents ${yellow}ping${reset}${blue}${bold} command from working.
 
 This demonstration show how to drop the NET_RAW Linux capability, and
 then how to set a syscall inside of the container, which allows the ping
-command to work again.
+command to work again.${reset}
 "
     # Podman ping inside a container
-    read -p "--> podman run ping ping -c 3 4.2.2.2"
+    read -p "${bold}--> podman run ping ping -c 3 4.2.2.2${reset}"
     echo ""
     podman run ping ping -c 3 4.2.2.2
     echo ""
 
     # Podman inside a container
-    read -p "--> podman run ${bold}--cap-drop NET_RAW${reset} ping ping -c 3 4.2.2.2"
+    read -p "${bold}--> podman run ${yellow}--cap-drop NET_RAW${reset}${bold} ping ping -c 3 4.2.2.2${reset}"
     echo ""
     podman run --cap-drop NET_RAW ping ping -c 3 4.2.2.2
     echo ""
     read -p "
-Fails because ${bold}NET_RAW${reset} disabled."
+${blue}${bold}Fails because ${yellow}NET_RAW${reset}${blue}${bold} disabled.${reset}"
 
     # Podman inside a container
     read -p "
-Execute same container with --sysctl 'net.ipv4.ping_group_range=0 1000' enabled
+${blue}${bold}Execute same container with --sysctl 'net.ipv4.ping_group_range=0 1000' enabled${reset}"
 
---> podman run -sysctl --cap-drop NET_RAW ${bold}--sysctl 'net.ipv4.ping_group_range=0 1000'${reset} ping ping -c 3 4.2.2.2"
+    read -p "${bold}--> podman run -sysctl --cap-drop NET_RAW ${yellow}--sysctl 'net.ipv4.ping_group_range=0 1000'${reset}${bold} ping ping -c 3 4.2.2.2${reset}"
     echo ""
     podman run -ti --cap-drop NET_RAW --sysctl 'net.ipv4.ping_group_range=0 1000' ping ping -c 3 4.2.2.2
     echo ""
-    read -p "--> clear"
+    read -p "${bold}--> clear${reset}"
     clear
 }
 
 capabilities_in_image() {
-    # Let image developer select the capabilities they want in the image by setting a label
-    read -p "--> cat /tmp/Capfile"
+    read -p "${blue}${bold}Let image developer select the capabilities they want in the image by setting a label${reset}"
+    read -p "${bold}--> cat /tmp/Capfile${reset}"
     cat /tmp/Capfile
     echo ""
-    read -p "--> podman run --name capctr -d fedoracap sleep 1000"
+    read -p "${bold}--> podman run --name capctr -d fedoracap sleep 1000${reset}"
     podman run --name capctr -d fedoracap sleep 1000
     echo ""
-    read -p "--> podman top capctr capeff"
+    read -p "${bold}--> podman top capctr capeff${reset}"
     podman top capctr capeff
     echo ""
-    read -p "--> podman run --name defctr -d fedora sleep 1000"
+    read -p "${bold}--> podman run --name defctr -d fedora sleep 1000${reset}"
     podman run --name defctr -d fedora sleep 1000
     echo ""
-    read -p "--> podman top defctr capeff"
+    read -p "${bold}--> podman top defctr capeff${reset}"
     podman top defctr capeff
     echo ""
-    read -p "--> cat /tmp/InvalidCapfile"
+    read -p "${bold}--> cat /tmp/InvalidCapfile${reset}"
     cat /tmp/InvalidCapfile
     echo ""
-    read -p "--> podman run --name invalidcapctr -d fedorainvalidcap sleep 1000"
+    read -p "${bold}--> podman run --name invalidcapctr -d fedorainvalidcap sleep 1000${reset}"
     podman run --name invalidcapctr -d fedorainvalidcap sleep 1000
     echo ""
-    read -p "--> podman top invalidcapctr capeff"
+    read -p "${bold}--> podman top invalidcapctr capeff${reset}"
     podman top invalidcapctr capeff
     echo ""
-    read -p "--> cleanup"
+    read -p "${bold}--> cleanup${reset}"
     podman rm -af
-    read -p "--> clear"
+    read -p "${bold}--> clear${reset}"
     clear
 }
 
 
 udica_demo() {
-    # Podman run with volumes using udica
+    read -p "${bold}${blue}Podman run with volumes using udica${reset}"
     # check /home, /var/spool, and the network nc -lvp (port)
-    read -p "--> podman run --rm -v /home:/home:ro -v /var/spool:/var/spool:rw -p 21:21 -it myfedora bash"
+    read -p "${bold}--> podman run --rm -v /home:/home:ro -v /var/spool:/var/spool:rw -p 21:21 -it myfedora bash${reset}"
     echo ""
     podman run -v /home:/home:ro -v /var/spool:/var/spool:rw -p 21:21 -it myfedora bash
     echo ""
-    read -p "Use udica to generate a custom policy for this container"
+    read -p "${bold}${blue}Use udica to generate a custom policy for this container${reset}"
     echo ""
-    read -p "--> podman run --name myctr -v /home:/home:ro -v /var/spool:/var/spool:rw -p 21:21 -d myfedora sleep 1000"
+    read -p "${bold}--> podman run --name myctr -v /home:/home:ro -v /var/spool:/var/spool:rw -p 21:21 -d myfedora sleep 1000${reset}"
     echo ""
     podman run --name myctr -v /home:/home:ro -v /var/spool:/var/spool:rw -p 21:21 -d myfedora sleep 1000
     echo ""
-    read -p "--> podman inspect myctr | udica my_container"
+    read -p "${bold}--> podman inspect myctr | udica my_container${reset}"
     echo ""
     podman inspect myctr | udica my_container
     echo ""
-    read -p "--> semodule -i my_container.cil /usr/share/udica/templates/{base_container.cil,net_container.cil,home_container.cil}"
+    read -p "${bold}--> semodule -i my_container.cil /usr/share/udica/templates/{base_container.cil,net_container.cil,home_container.cil}${reset}"
     semodule -i my_container.cil /usr/share/udica/templates/{base_container.cil,net_container.cil,home_container.cil}
     echo ""
-    read -p "--> cleanup"
+    read -p "${bold}--> cleanup${reset}"
     podman rm -af 2> /dev/null
     echo ""
-    read -p "Let's restart the container"
+    read -p "${blue}${bold}Let's restart the container${reset}"
     echo ""
-    read -p "--> podman run --name udica_ctr --security-opt label=type:my_container.process -v /home:/home:ro -v /var/spool:/var/spool:rw -p 21:21 -d myfedora sleep 1000"
+    read -p "${bold}--> podman run --name udica_ctr --security-opt label=type:my_container.process -v /home:/home:ro -v /var/spool:/var/spool:rw -p 21:21 -d myfedora sleep 1000${reset}"
     echo ""
     podman run --name udica_ctr --security-opt label=type:my_container.process -v /home:/home:ro -v /var/spool:/var/spool:rw -p 21:21 -d myfedora sleep 1000
     echo ""
-    read -p "--> ps -efZ | grep my_container.process"
+    read -p "${bold}--> ps -efZ | grep my_container.process${reset}"
     ps -efZ | grep my_container.process
     echo ""
-    read -p "--> podman exec -it udica_ctr bash"
+    read -p "${bold}--> podman exec -it udica_ctr bash${reset}"
     podman exec -it udica_ctr bash
     echo ""
-    read -p "--> clear"
+    read -p "${bold}--> clear${reset}"
     clear
 }
 
@@ -156,71 +160,71 @@ syscalls() {
 
 seccomp() {
     # Podman Generate Seccomp Rules
-    read -p "
+    read -p "${blue}${bold}
 Podman Generate Seccomp Rules
 
 This demonstration with use an OCI Hook to fire up a BPF Program to trace
 all sycalls generated from a container.
 
 We will then use the generated seccomp file to lock down the container, only
-allowing the generated syscalls, rather then the system default.
+allowing the generated syscalls, rather then the system default.${reset}
 "
     echo ""
 
-    read -p "--> less /usr/share/containers/oci/hooks.d/oci-seccomp-bpf-hook.json"
+    read -p "${bold}--> less /usr/share/containers/oci/hooks.d/oci-seccomp-bpf-hook.json${reset}"
     less /usr/share/containers/oci/hooks.d/oci-seccomp-bpf-hook.json
     echo ""
     echo ""
 
-    read -p "--> podman run ${bold}--annotation io.containers.trace-syscall=of:/tmp/myseccomp.json${reset} fedora ls /"
+    read -p "${bold}--> podman run ${yellow}--annotation io.containers.trace-syscall=of:/tmp/myseccomp.json${reset}${bold} fedora ${yellow}ls /${reset}"
     podman run --annotation io.containers.trace-syscall=of:/tmp/myseccomp.json fedora ls /
     echo ""
 
-    read -p "--> cat /tmp/myseccomp.json | json_pp"
+    read -p "${bold}--> cat /tmp/myseccomp.json | json_pp${reset}"
     cat /tmp/myseccomp.json | json_pp > /tmp/myseccomp.pp
     less /tmp/myseccomp.pp
     echo ""
     clear
-    read -p "--> podman run ${bold}--security-opt seccomp=/tmp/myseccomp.json${reset} fedora ls /"
+    read -p "${bold}--> podman run ${yellow}--security-opt seccomp=/tmp/myseccomp.json${reset}${bold} fedora ${yellow}ls /${reset}"
     podman run --security-opt seccomp=/tmp/myseccomp.json fedora ls /
     echo ""
-    read -p "--> clear"
+    read -p "${bold}--> clear${reset}"
     clear
 
-    read -p "--> podman run --security-opt seccomp=/tmp/myseccomp.json fedora ${bold}ls -l /${reset}"
+    read -p "${bold}--> podman run --security-opt seccomp=/tmp/myseccomp.json fedora ${yellow}ls -l /${reset}"
     podman run --security-opt seccomp=/tmp/myseccomp.json fedora ls -l /
     echo ""
 
-    read -p "--> grep --color SYSCALL=.* /var/log/audit/audit.log"
+    read -p "${bold}--> grep --color SYSCALL=.* /var/log/audit/audit.log${reset}"
     grep --color SYSCALL=.* /var/log/audit/audit.log
     echo ""
 
     syscalls
 
-    read -p "--> podman run --annotation io.containers.trace-syscall=\"if:/tmp/myseccomp.json;of:/tmp/myseccomp2.json\" fedora ls -l / > /dev/null"
+    read -p "${bold}--> podman run --annotation io.containers.trace-syscall=\"if:/tmp/myseccomp.json;of:/tmp/myseccomp2.json\" fedora ls -l / > /dev/null${reset}"
     podman run --annotation io.containers.trace-syscall="if:/tmp/myseccomp.json;of:/tmp/myseccomp2.json" fedora ls -l /
     echo ""
 
-    read -p "--> podman run ${bold}--security-opt seccomp=/tmp/myseccomp2.json${reset} fedora ls -l /"
+    read -p "${bold}--> podman run --security-opt seccomp=/tmp/myseccomp2.json fedora ls -l /${reset}"
     podman run --security-opt seccomp=/tmp/myseccomp2.json fedora ls -l /
     echo ""
 
-    read -p "--> diff -u /tmp/myseccomp.json /tmp/myseccomp2.json"
+    read -p "${bold}--> diff -u /tmp/myseccomp.json /tmp/myseccomp2.json${reset}"
     cat /tmp/myseccomp2.json | json_pp > /tmp/myseccomp2.pp
     diff -u /tmp/myseccomp.pp /tmp/myseccomp2.pp | less
-    read -p "--> clear"
+    read -p "${bold}--> clear${reset}"
     clear
 }
 
 
 containers_conf_ping() {
-    read -p "
+    read -p "${blue}${bold}
 This demonstration will show how you can specify the default linux capabilities
 for all containers on your system.
 
 Then of the demonstration will show ping still running without NET_RAW
 Capability, since containers_conf will automatically set the sycall.
-"
+${reset}"
 cat > containers.conf <<EOF
 [containers]
 
@@ -242,45 +246,45 @@ default_capabilities = [
 EOF
 
     # Podman ping inside a container
-    read -p "--> podman run -d fedora sleep 6000"
+    read -p "${bold}--> podman run -d fedora sleep 6000${reset}"
     echo ""
     podman run -d fedora sleep 6000
     echo ""
 
     # Podman ping inside a container
-    read -p "--> podman top -l capeff"
+    read -p "${bold}--> podman top -l capeff${reset}"
     echo ""
     podman top -l capeff |  grep --color=auto -B 1 NET_RAW
     echo ""
 
     # Podman ping inside a container
-    read -p "--> cat containers.conf"
+    read -p "${bold}--> cat containers.conf${reset}"
     echo ""
     cat containers.conf
     echo ""
 
     # Podman ping inside a container
-    read -p "--> CONTAINERS_CONF=containers.conf podman run -d fedora sleep 6000"
+    read -p "${bold}--> CONTAINERS_CONF=containers.conf podman run -d fedora sleep 6000${reset}"
     echo ""
     CONTAINERS_CONF=containers.conf podman run -d fedora sleep 6000
     echo ""
 
     # Podman ping inside a container
-    read -p "--> CONTAINERS_CONF=containers.conf podman top -l capeff"
+    read -p "${bold}--> CONTAINERS_CONF=containers.conf podman top -l capeff${reset}"
     echo ""
     CONTAINERS_CONF=containers.conf podman top -l capeff
     echo ""
 
     # Podman inside a container
-    read -p "
-Notice NET_RAW as well as AUDIT_WRITE, SYS_CHROOT, and MKNOD capabilies are gone
+    read -p "${blue}${bold}
+Notice NET_RAW as well as AUDIT_WRITE, SYS_CHROOT, and MKNOD capabilies are gone${reset}"
 
---> CONTAINERS_CONF=containers.conf podman run ping ping -c 3 4.2.2.2"
+    read -p "${bold}--> CONTAINERS_CONF=containers.conf podman run ping ping -c 3 4.2.2.2${reset}"
     echo ""
     CONTAINERS_CONF=containers.conf podman run ping ping -c 3 4.2.2.2
     echo ""
-    read -p "
-Fails because ${bold}NET_RAW${reset} disabled.
+    read -p "${blue}${bold}
+Fails because ${yellow}NET_RAW${reset}${blue}${bold} disabled${reset}.
 
 "
 
@@ -293,54 +297,53 @@ default_sysctls = [
 EOF
 
     # Podman ping inside a container
-    read -p "
-Let's add the net.ipv4.ping_group syscall to the containers.conf
+    read -p "${blue}${bold}
+Let's add the ${yellow}net.ipv4.ping_group syscall${reset}${blue}${bold} to the containers.conf${reset}"
 
-cat containers.conf
-"
+    read -p "${bold}--> cat containers.conf${reset}"
     echo ""
     cat containers.conf
     echo ""
 
     # Podman inside a container
-    read -p "--> CONTAINERS_CONF=containers.conf podman run ping ping -c 3 4.2.2.2"
+    read -p "${bold}--> CONTAINERS_CONF=containers.conf podman run ping ping -c 3 4.2.2.2${reset}"
     echo ""
     CONTAINERS_CONF=containers.conf podman run ping ping -c 3 4.2.2.2
     echo ""
-    read -p "--> clear"
+    read -p "${bold}--> clear${reset}"
     clear
 }
 
 userns() {
     # Podman user namespace
-    read -p "Podman User Namespace Support"
+    read -p "${blue}${bold}Podman User Namespace Support${reset}"
     echo ""
 
-    read -p "--> podman run --uidmap 0:100000:5000 -d fedora sleep 1000"
+    read -p "${bold}--> podman run --uidmap 0:100000:5000 -d fedora sleep 1000${reset}"
     podman run --net=host --uidmap 0:100000:5000 -d fedora sleep 1000
     echo ""
 
-    read -p "--> podman top --latest user huser | grep --color=auto -B 1 100000"
+    read -p "${bold}--> podman top --latest user huser | grep --color=auto -B 1 100000${reset}"
     podman top --latest user huser | grep --color=auto -B 1 100000
     echo ""
 
-    read -p "--> ps -ef | grep -v grep | grep --color=auto 100000"
+    read -p "${bold}--> ps -ef | grep -v grep | grep --color=auto 100000${reset}"
     ps -ef | grep -v grep | grep --color=auto 100000
     echo ""
 
-    read -p "--> podman run --uidmap 0:200000:5000 -d fedora sleep 1000"
+    read -p "${bold}--> podman run --uidmap 0:200000:5000 -d fedora sleep 1000${reset}"
     podman run --net=host --uidmap 0:200000:5000 -d fedora sleep 1000
     echo ""
 
-    read -p "--> podman top --latest user huser | grep --color=auto -B 1 200000"
+    read -p "${bold}--> podman top --latest user huser | grep --color=auto -B 1 200000${reset}"
     podman top --latest user huser | grep --color=auto -B 1 200000
     echo ""
 
-    read -p "--> ps -ef | grep -v grep | grep --color=auto 200000"
+    read -p "${bold}--> ps -ef | grep -v grep | grep --color=auto 200000${reset}"
     ps -ef | grep -v grep | grep --color=auto 200000
     echo ""
 
-    read -p "--> clear"
+    read -p "${bold}--> clear${reset}"
     clear
 }
 
@@ -352,5 +355,5 @@ seccomp
 userns
 containers_conf_ping
 
-read -p "End of Demo"
-echo "Thank you!"
+read -p "${yellow}${bold}End of Demo"
+echo "Thank you!${reset}"
