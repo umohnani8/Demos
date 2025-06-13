@@ -47,51 +47,96 @@ CONTAINER ID  IMAGE                          COMMAND               CREATED      
 043a84a0208e  quay.io/ramalama/ramalama:0.8  /usr/libexec/rama...  5 seconds ago  Up 5 seconds  0.0.0.0:8080->8080/tcp  ramalama
 ```
 
+### Step 4: Setup Environment Variables
 
-### Step 3: Setup Environment Variables
-
-Set up the **INFERENCE_MODEL** environment variable to point to the name of your model. For this example it is:
+Set up the **INFERENCE_MODEL** environment variable to point to the name of your model.
 ```
-export INFERENCE_MODEL=llama3.2:3b-instruct-fp16
-```
-
-Set up the **LLAMA_STACK_PORT** environment variable to point to the llamastack port, which is 8321 by default:
-```
-export LLAMA_STACK_PORT=8321
+export INFERENCE_MODEL=bartowski/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q5_K_M.gguf
 ```
 
-### Step 4: Run Llama Stack Server with Podman
+### Step 5: Run Llama Stack Server with Podman
 
-Pull the llamastack image.
+Use podman to run the llama-stack image built for Ramalama.
 ```
-podman pull docker.io/llamastack/distribution-ollama
-```
-
-Create a local directory to mount into the container's filesystem.
-```
-mkdir -p ~/.llama
-```
-
-Run the server using podman.
-```
-podman run --network=host -it \
-  -p $LLAMA_STACK_PORT:$LLAMA_STACK_PORT \
-  -v ~/.llama:/root/.llama \
-  --env INFERENCE_MODEL=$INFERENCE_MODEL \
-  --env OLLAMA_URL=http://127.0.0.1:11434 \
-  llamastack/distribution-ollama \
-  --port $LLAMA_STACK_PORT
+podman run \
+ --net=host \
+ --env RAMALAMA_URL=http://0.0.0.0:8080 \
+ --env INFERENCE_MODEL=$INFERENCE_MODEL \
+ quay.io/ramalama/llama-stack
 ```
 
-### Step 5: Run an AI Application
+Set the environment **RAMALAMA_URL** to point to the endpoint that the model is served on.
 
-Let's run an AI application to use the the model and llama stack servers that we started!
+This will start the Llama Stack API server on the endpoint **http://0.0.0.0:8321**. You can view the docs for the llama stack server in your browser at **http://0.0.0.0:8321/docs**.
 
-There is a llama stack streamlit UI application that gives you the ability to explore all that llama stack has to offer.
+### Step 6: Run an AI Application
+
+#### Local Application
+
+Let's run an AI application to use the model and llama stack servers that we started!
+
+Let's create simple python script starting a chatbot to talk with the model. The script can be found at
 
 ```
-podman run -it --name ramalamastack-ui \
+python client_app.py
+```
+
+This will start a chatbot in your terminal that you can interact with. Go ahead and ask it some questions!
+
+#### Containerized Application
+
+We can also run an application inside a container and connect it to the llama stack server running inside a podman contaier.
+
+Llama Stack provides a streamlit-ui that we can run in a container to interact with everything it has to offer.
+
+```
+podman run -it --rm \
+  --name ramalamastack-ui \
   -p 8501:8501 \
-  -e LLAMA_STACK_ENDPOINT=http://host.containers.internal:8321\
+  -e LLAMA_STACK_ENDPOINT=http://host.containers.internal:8321 \
   quay.io/redhat-et/streamlit_client:0.1.0
 ```
+
+This will expose the streamlit-ui application on **http://http://0.0.0.0:8501**.
+The **LLAMA_STACK_ENDPOINT** environment variable is used to tell  podman to connect to the 8321 port on your host's network as the llama stack server is running inside another container with the port exposed to your host.
+
+There you go, you have served your model, started the llama stack server, and started your AI applications in containers!
+
+## Podify the Containers!
+
+Instead of starting 3 different containers everytime, let's put these containers together in a pod. This can be easily done with the `podman kube generate` command.
+
+Grab the container IDs of the containers we started above.
+```
+podman ps
+
+CONTAINER ID  IMAGE                                     COMMAND               CREATED        STATUS        PORTS                             NAMES
+d06ed4e0271b  quay.io/ramalama/ramalama:0.8             /usr/libexec/rama...  9 minutes ago  Up 9 minutes  0.0.0.0:8080->8080/tcp            ramalama
+4310162e0a5b  localhost/ramalama-llamastack:latest      /bin/sh -c llama ...  8 minutes ago  Up 8 minutes                                    llamastack
+fed4a88eb19f  quay.io/redhat-et/streamlit_client:0.1.0                        3 seconds ago  Up 4 seconds  0.0.0.0:8501->8501/tcp, 8080/tcp  ramalamastack-ui
+```
+
+Generate the Kubernetes YAML file.
+```
+podman kube generate d06ed4e0271b 4310162e0a5b fed4a88eb19f -f ramalama-llamastack-ui.yaml
+```
+
+This will create a file that will look something like [this](https://github.com/umohnani8/Demos/blob/master/llamastack/ramalama-llamastack-ui.yaml).
+
+> Note: You will need to edit the generated yaml to add the [following](https://github.com/umohnani8/Demos/blob/master/llamastack/ramalama-llamastack-ui.yaml#L83-L85) to the llamastack container definition so that the ports are exposed correctly.
+
+Let's stop and remove all the containers we started.
+```
+podman rm -af
+```
+
+Now, let's play the Kube yaml we just generated.
+```
+podman kube play ramalama-llamastack-ui.yaml
+```
+
+Wait a few seconds for all the containers to come up. Once they are up, you will be able to access the streamlit-ui on **http://http://0.0.0.0:8501** as we did earlier.
+
+> Note: You can also generate a yaml with only the model and llamastack containers, it will look something like [this](https://github.com/umohnani8/Demos/blob/master/llamastack/ramalama-llamastack.yaml). This way, you can run your AI application in a separate container and connect it the llama stack endpoint exposed by this pod.
+
+Have fun playing with containers and Llama Stack!
