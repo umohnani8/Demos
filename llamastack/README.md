@@ -49,7 +49,25 @@ CONTAINER ID  IMAGE                          COMMAND               CREATED      
 
 > Note: There is a bug with how the ports are exposed on Macs using podman machine, so to make this work with  a Mac, you will have to run the following command instead to serve the mode. This exposes the ports correctly.
 ```
-
+podman run -d --rm \
+    -p 8080:8080 \
+    -p 8501:8501 \
+    -p 8321:8321 \
+    --label ai.ramalama \
+    --label ai.ramalama.model=huggingface://bartowski/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q5_K_M.gguf \
+    --label ai.ramalama.engine=podman \
+    --label ai.ramalama.runtime=llama.cpp \
+    --label ai.ramalama.port=8080 \
+    --label ai.ramalama.command=serve \
+    --security-opt=label=disable \
+    #--device /dev/dri \ <- UNCOMMENT IF USING GPUs!!
+    --cap-drop=all --security-opt=no-new-privileges \
+    --pull newer -t -i \
+    --name ramalama \
+    --env=HOME=/tmp \
+    --init \
+    --mount=type=bind,src=/Users/somalley/.local/share/ramalama/store/huggingface/bartowski/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q5_K_M.gguf/blobs/sha256-16d824ee771e0e33b762bb3dc3232b972ac8dce4d2d449128fca5081962a1a9e,destination=/mnt/models/model.file,ro \
+    quay.io/ramalama/ramalama:0.9 /usr/libexec/ramalama/ramalama-serve-core llama-server --port 8080 --model /mnt/models/model.file --jinja --alias bartowski/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q5_K_M.gguf --ctx-size 2048 --temp 0.8 --cache-reuse 256 -ngl 999 --threads 6 --host 0.0.0.0
 ```
 
 ### Step 4: Setup Environment Variables
