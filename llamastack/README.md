@@ -47,6 +47,11 @@ CONTAINER ID  IMAGE                          COMMAND               CREATED      
 043a84a0208e  quay.io/ramalama/ramalama:0.8  /usr/libexec/rama...  5 seconds ago  Up 5 seconds  0.0.0.0:8080->8080/tcp  ramalama
 ```
 
+> Note: There is a bug with how the ports are exposed on Macs using podman machine, so to make this work with  a Mac, you will have to run the following command instead to serve the mode. This exposes the ports correctly.
+```
+
+```
+
 ### Step 4: Setup Environment Variables
 
 Set up the **INFERENCE_MODEL** environment variable to point to the name of your model.
@@ -75,7 +80,7 @@ This will start the Llama Stack API server on the endpoint **http://0.0.0.0:8321
 
 Let's run an AI application to use the model and llama stack servers that we started!
 
-Let's create simple python script starting a chatbot to talk with the model. The script can be found at
+Let's create simple python script starting a chatbot to talk with the model. The script can be found [here](https://github.com/umohnani8/Demos/blob/master/llamastack/client_app.py).
 
 ```
 python client_app.py
@@ -140,3 +145,9 @@ Wait a few seconds for all the containers to come up. Once they are up, you will
 > Note: You can also generate a yaml with only the model and llamastack containers, it will look something like [this](https://github.com/umohnani8/Demos/blob/master/llamastack/ramalama-llamastack.yaml). This way, you can run your AI application in a separate container and connect it the llama stack endpoint exposed by this pod.
 
 Have fun playing with containers and Llama Stack!
+
+## Resources
+
+- [Ramalama](https://github.com/containers/ramalama)
+- [Ramalama-stack](https://github.com/containers/ramalama-stack)
+- [Llama Stack](https://github.com/meta-llama/llama-stack)
