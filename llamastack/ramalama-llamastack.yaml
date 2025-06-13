@@ -1,0 +1,88 @@
+# Save the output of this file and use kubectl create -f to import
+# it into Kubernetes.
+#
+# Created with podman-5.6.0-dev
+
+# NOTE: If you generated this yaml from an unprivileged and rootless podman container on an SELinux
+# enabled system, check the podman generate kube man page for steps to follow to ensure that your pod/container
+# has the right permissions to access the volumes added.
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2025-06-13T07:04:04Z"
+  labels:
+    app: ramalama-pod
+  name: ramalama-pod
+spec:
+  containers:
+  - command:
+    - /usr/libexec/ramalama/ramalama-serve-core
+    - llama-server
+    - --port
+    - "8080"
+    - --model
+    - /mnt/models/model.file
+    - --jinja
+    - --alias
+    - bartowski/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q5_K_M.gguf
+    - --ctx-size
+    - "2048"
+    - --temp
+    - "0.8"
+    - --cache-reuse
+    - "256"
+    - --threads
+    - "6"
+    - --host
+    - 0.0.0.0
+    env:
+    - name: TERM
+      value: xterm
+    - name: HOME
+      value: /tmp
+    image: quay.io/ramalama/ramalama:0.8
+    name: ramalama
+    ports:
+    - containerPort: 8080
+      hostPort: 8080
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - CAP_CHOWN
+        - CAP_DAC_OVERRIDE
+        - CAP_FOWNER
+        - CAP_FSETID
+        - CAP_KILL
+        - CAP_NET_BIND_SERVICE
+        - CAP_SETFCAP
+        - CAP_SETGID
+        - CAP_SETPCAP
+        - CAP_SETUID
+        - CAP_SYS_CHROOT
+      seLinuxOptions:
+        type: spc_t
+    stdin: true
+    tty: true
+    volumeMounts:
+    - mountPath: /mnt/models/model.file
+      name: home-umohnani-.local-share-ramalama-store-huggingface-bartowski-meta-llama-3-8b-instruct-gguf-meta-llama-3-8b-instruct-q5-k-m.gguf-blobs-sha256-16d824ee771e0e33b762bb3dc3232b972ac8dce4d2d449128fca5081962a1a9e-host-0
+      readOnly: true
+  - args:
+    - /bin/sh
+    - -c
+    - llama stack run --image-type venv /etc/ramalama/ramalama-run.yaml
+    env:
+    - name: RAMALAMA_URL
+      value: http://0.0.0.0:8080
+    - name: INFERENCE_MODEL
+      value: bartowski/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q5_K_M.gguf
+    image: localhost/ramalama-llamastack:latest
+    name: llamastack
+  hostname: fedora
+  volumes:
+  - hostPath:
+      path: /home/umohnani/.local/share/ramalama/store/huggingface/bartowski/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q5_K_M.gguf/blobs/sha256-16d824ee771e0e33b762bb3dc3232b972ac8dce4d2d449128fca5081962a1a9e
+      type: File
+    name: home-umohnani-.local-share-ramalama-store-huggingface-bartowski-meta-llama-3-8b-instruct-gguf-meta-llama-3-8b-instruct-q5-k-m.gguf-blobs-sha256-16d824ee771e0e33b762bb3dc3232b972ac8dce4d2d449128fca5081962a1a9e-host-0
