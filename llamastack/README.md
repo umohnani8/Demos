@@ -77,6 +77,12 @@ Set up the **INFERENCE_MODEL** environment variable to point to the name of your
 export INFERENCE_MODEL=bartowski/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q5_K_M.gguf
 ```
 
+(Optional) Set up **TAVILY_SEARCH_API_KEY** environment variable to enable websearch within LlamaStack.
+Tavily is the default in the LlamaStack UI shown below. See [tavily.com](https://www.tavily.com/) to obtain a free trial API Key.
+```
+export TAVILY_SEARCH_API_KEY=replaceme
+```
+
 ### Step 5: Run Llama Stack Server with Podman
 
 Use podman to run the llama-stack image built for Ramalama.
@@ -86,6 +92,11 @@ podman run \
  --env RAMALAMA_URL=http://0.0.0.0:8080 \
  --env INFERENCE_MODEL=$INFERENCE_MODEL \
  quay.io/ramalama/llama-stack
+```
+
+Add the following parameter above to add websearch function.
+```
+--env TAVILY_SEARCH_API_KEY=$TAVILY_SEARCH_API_KEY \
 ```
 
 Set the environment **RAMALAMA_URL** to point to the endpoint that the model is served on.
