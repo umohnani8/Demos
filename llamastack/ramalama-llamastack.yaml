@@ -80,6 +80,9 @@ spec:
       value: bartowski/Meta-Llama-3-8B-Instruct-GGUF/Meta-Llama-3-8B-Instruct-Q5_K_M.gguf
     image: localhost/ramalama-llamastack:latest
     name: llamastack
+    ports:
+    - containerPort: 8321
+      hostPort: 8321
   hostname: fedora
   volumes:
   - hostPath:
