@@ -1,0 +1,6 @@
+default:
+  provider: ollama
+  processor: ollama
+  accelerator: auto
+  moderator: passive
+  model: model.file

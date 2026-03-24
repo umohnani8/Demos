@@ -1,0 +1,155 @@
+# Save the output of this file and use kubectl create -f to import
+# it into Kubernetes.
+#
+# Created with podman-5.7.1
+# Modified for OpenShift
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2026-03-23T12:08:01Z"
+  labels:
+    app: goose-llama3
+  name: goose-llama3
+spec:
+  # OPENSHIFT EDIT: Change to ClusterIP and remove nodePorts
+  ports:
+  - name: web
+    port: 7681
+    targetPort: 7681
+    protocol: TCP
+  - name: api
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  selector:
+    app: goose-llama3
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2026-03-23T12:08:01Z"
+  labels:
+    app: goose-llama3
+  name: goose-llama3-deployment
+spec:
+  selector:
+    matchLabels:
+      app: goose-llama3
+  template:
+    metadata:
+      creationTimestamp: "2026-03-23T12:08:01Z"
+      labels:
+        app: goose-llama3
+      name: goose-llama3
+    spec:
+      # MANUAL EDIT: Add initContainer to copy model from car-type image
+      initContainers:
+      - name: copy-model
+        # OPENSHIFT EDIT: Use registry image instead of localhost
+        image: quay.io/umohnani8/llama3-car:latest
+        imagePullPolicy: Always
+        command: ["sh", "-c", "cp -r /models/* /mnt/models/"]
+        volumeMounts:
+        - mountPath: /mnt/models
+          name: model
+        # OPENSHIFT EDIT: Add security context to initContainer
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: false
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+      containers:
+      - command:
+        - llama-server
+        - --host
+        - 0.0.0.0
+        - --port
+        - "8080"
+        - --model
+        - /mnt/models/model.file
+        - --jinja
+        - --no-warmup
+        - --alias
+        - llama3
+        - --temp
+        - "0.8"
+        - --cache-reuse
+        - "256"
+        - -ngl
+        - "999"
+        - --threads
+        - "6"
+        env:
+        - name: HOME
+          value: /tmp
+        image: quay.io/ramalama/ramalama:latest
+        name: llama3-server
+        ports:
+        - containerPort: 7681
+        - containerPort: 8080
+        # MANUAL EDIT: Add volumeMounts for model
+        volumeMounts:
+        - mountPath: /mnt/models
+          name: model
+        # OPENSHIFT EDIT: Simplify security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: false
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+      # OPENSHIFT EDIT: Use registry image instead of localhost
+      - image: quay.io/acui/goose:latest
+        imagePullPolicy: Always
+        name: goose-web
+        securityContext:
+          allowPrivilegeEscalation: false
+          runAsNonRoot: false
+          capabilities:
+            drop:
+            - ALL
+          seccompProfile:
+            type: RuntimeDefault
+      # MANUAL EDIT: Replace hostPath with emptyDir
+      volumes:
+      - name: model
+        emptyDir: {}
+---
+# OPENSHIFT EDIT: Add Route for external access
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: goose-web
+  labels:
+    app: goose-llama3
+spec:
+  port:
+    targetPort: web
+  to:
+    kind: Service
+    name: goose-llama3
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: llama3-api
+  labels:
+    app: goose-llama3
+spec:
+  port:
+    targetPort: api
+  to:
+    kind: Service
+    name: goose-llama3
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

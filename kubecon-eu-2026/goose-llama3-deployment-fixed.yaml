@@ -1,0 +1,105 @@
+# Save the output of this file and use kubectl create -f to import
+# it into Kubernetes.
+#
+# Created with podman-5.7.1
+# Modified for minikube
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: goose-llama3
+  name: goose-llama3
+spec:
+  ports:
+  - name: web
+    port: 7681
+    targetPort: 7681
+  - name: api
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: goose-llama3
+  type: NodePort
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: goose-llama3
+  name: goose-llama3-deployment
+spec:
+  selector:
+    matchLabels:
+      app: goose-llama3
+  template:
+    metadata:
+      labels:
+        app: goose-llama3
+      name: goose-llama3
+    spec:
+      # MANUAL EDIT: Add initContainer to copy model from car-type image
+      initContainers:
+      - name: copy-model
+        image: localhost/llama3-car:latest
+        imagePullPolicy: Never
+        command: ["sh", "-c", "cp -r /models/* /mnt/models/"]
+        volumeMounts:
+        - mountPath: /mnt/models
+          name: model
+      containers:
+      - command:
+        - llama-server
+        - --host
+        - 0.0.0.0
+        - --port
+        - "8080"
+        - --model
+        - /mnt/models/model.file
+        - --jinja
+        - --no-warmup
+        - --alias
+        - llama3
+        - --temp
+        - "0.8"
+        - --cache-reuse
+        - "256"
+        - -ngl
+        - "999"
+        - --threads
+        - "6"
+        env:
+        - name: HOME
+          value: /tmp
+        image: quay.io/ramalama/ramalama:latest
+        name: llama3-server
+        ports:
+        - containerPort: 8080
+        # MANUAL EDIT: Add volumeMounts for model
+        volumeMounts:
+        - mountPath: /mnt/models
+          name: model
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - CAP_CHOWN
+            - CAP_DAC_OVERRIDE
+            - CAP_FOWNER
+            - CAP_FSETID
+            - CAP_KILL
+            - CAP_NET_BIND_SERVICE
+            - CAP_SETFCAP
+            - CAP_SETGID
+            - CAP_SETPCAP
+            - CAP_SETUID
+            - CAP_SYS_CHROOT
+      - image: quay.io/acui/goose:latest
+        imagePullPolicy: Never
+        name: goose-web
+        ports:
+        - containerPort: 7681
+        securityContext: {}
+      # MANUAL EDIT: Replace hostPath with emptyDir
+      volumes:
+      - name: model
+        emptyDir: {}

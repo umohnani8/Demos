@@ -1,0 +1,28 @@
+FROM quay.io/acui/goose:latest
+
+USER root
+
+# Install ttyd for web-based terminal access
+RUN apt-get update && apt-get install -y curl && \
+    curl -L https://github.com/tsl0922/ttyd/releases/download/1.7.7/ttyd.x86_64 -o /usr/local/bin/ttyd && \
+    chmod +x /usr/local/bin/ttyd && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy goose configuration files
+COPY goose-config/config.yaml /home/goose/.config/goose/config.yaml
+COPY goose-config/profiles.yaml /home/goose/.config/goose/profiles.yaml
+COPY goose-config/providers.yaml /home/goose/.config/goose/providers.yaml
+
+# Fix ownership
+RUN chown -R goose:goose /home/goose/.config
+
+# Set goose as default user
+USER goose
+WORKDIR /home/goose
+
+# Expose ttyd port
+EXPOSE 7681
+
+# Override entrypoint and start ttyd with goose session
+ENTRYPOINT []
+CMD ["/usr/local/bin/ttyd", "-W", "-p", "7681", "goose", "session"]
